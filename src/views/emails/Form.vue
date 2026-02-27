@@ -129,7 +129,7 @@ const getItem = async () => {
   if (isStoreMode.value) {
     item.value = {
       email: null,
-      domain_id: domainId.value,
+      domain_id: emailId.value,
     };
     isLoading.value = false;
   } else {
