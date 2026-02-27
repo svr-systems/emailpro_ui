@@ -5,43 +5,12 @@
         <v-col cols="10">
           <CardTitle :text="route.meta.title" :icon="route.meta.icon" />
         </v-col>
-        <v-col cols="2" class="text-right">
-          <v-btn
-            icon
-            variant="flat"
-            size="x-small"
-            color="success"
-            :to="{ name: `${routeName}/store` }"
-          >
-            <v-icon>mdi-plus</v-icon>
-            <v-tooltip activator="parent" location="bottom">Agregar</v-tooltip>
-          </v-btn>
-        </v-col>
       </v-row>
     </v-card-title>
 
     <v-card-text>
       <v-row dense>
         <v-col cols="12" md="9" class="pb-0">
-          <v-row dense>
-            <v-col
-              v-if="[1, 2].includes(store.getAuth?.user?.role_id)"
-              cols="12"
-              md="3"
-              class="pb-0"
-            >
-              <v-select
-                v-model="isActive"
-                label="Mostrar"
-                variant="outlined"
-                density="compact"
-                :items="isActiveOptions"
-                item-title="name"
-                item-value="id"
-                :disabled="!isItemsEmpty"
-              />
-            </v-col>
-          </v-row>
         </v-col>
 
         <v-col cols="12" md="3" class="pb-0">
@@ -54,19 +23,6 @@
             append-inner-icon="mdi-magnify"
             :disabled="isItemsEmpty"
           />
-        </v-col>
-
-        <v-col cols="12">
-          <v-btn
-            block
-            size="small"
-            :color="isItemsEmpty ? 'info' : 'grey-darken-1'"
-            :loading="isItemsEmpty && isLoading"
-            @click.prevent="isItemsEmpty ? getItems() : (items = [])"
-          >
-            {{ isItemsEmpty ? "Aplicar" : "Cambiar" }} filtros
-            <v-icon right>mdi-filter</v-icon>
-          </v-btn>
         </v-col>
 
         <v-col cols="12">
@@ -94,7 +50,6 @@
                   icon
                   variant="text"
                   size="x-small"
-                  :color="item.is_active ? '' : 'red-darken-3'"
                   :to="{
                     name: `${routeName}/show`,
                     params: { id: getEncodeId(item.id) },
@@ -124,17 +79,18 @@ import axios from "axios";
 import { useStore } from "@/store";
 import { URL_API } from "@/utils/config";
 import { getHdrs, getErr, getRsp } from "@/utils/http";
-import { getEncodeId } from "@/utils/coders";
+import { getDecodeId, getEncodeId } from "@/utils/coders";
 import CardTitle from "@/components/CardTitle.vue";
+import BtnBack from "@/components/BtnBack.vue";
 
 // Constantes
-const routeName = "users";
+const routeName = "client_domains";
 const alert = inject("alert");
 const store = useStore();
 const route = useRoute();
 
 // Estado
-const isLoading = ref(false);
+const isLoading = ref(true);
 const items = ref([]);
 const search = ref("");
 const isActive = ref(1);
@@ -153,10 +109,8 @@ const filterOptions = [{ id: 0, name: "TODOS" }];
 
 const headers = [
   { title: "#", key: "key", filterable: false, sortable: false, width: 60 },
-  { title: "Nombre", key: "name" },
-  { title: "Apellido paterno", key: "paternal_surname" },
-  { title: "Apellido materno", key: "maternal_surname" },
-  { title: "E-mail", key: "email" },
+  { title: "Empresa", key: "company" },
+  { title: "N° correos", key: "email_accounts" },
   { title: "", key: "action", filterable: false, sortable: false, width: 60 },
 ];
 
@@ -166,12 +120,8 @@ const getItems = async () => {
   items.value = [];
 
   try {
-    const endpoint = `${URL_API}/${routeName}`;
+    const endpoint = `${URL_API}/client/domains`;
     const response = await axios.get(endpoint, {
-      params: {
-        is_active: isActive.value,
-        program_id: program_id.value,
-      },
       ...getHdrs(store.getAuth?.token),
     });
     items.value = getRsp(response).data.items;

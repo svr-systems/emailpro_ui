@@ -4,9 +4,14 @@
       <v-row dense>
         <v-col cols="10">
           <BtnBack
-            :route="{
-              name: routeName + (!isStoreMode ? '/show' : ''),
-            }"
+            :route="
+              !isStoreMode
+                ? {
+                    name: routeName + '/show',
+                    params: { id: getEncodeId(itemId) },
+                  }
+                : { name: routeName, params: { id: getEncodeId(clientId) } }
+            "
           />
           <CardTitle :text="$route.meta.title" :icon="$route.meta.icon" />
         </v-col>
@@ -31,7 +36,19 @@
                 <v-row dense>
                   <v-col cols="12" md="4">
                     <v-text-field
-                      label="Nombre"
+                      label="Empresa"
+                      v-model="item.company"
+                      type="text"
+                      variant="outlined"
+                      density="compact"
+                      maxlength="50"
+                      counter
+                      :rules="rules.textRequired"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      label="Nombre del dominio"
                       v-model="item.name"
                       type="text"
                       variant="outlined"
@@ -43,63 +60,61 @@
                   </v-col>
                   <v-col cols="12" md="4">
                     <v-text-field
-                      label="Apellido paterno"
-                      v-model="item.paternal_surname"
+                      label="N° cuentas de email"
+                      v-model="item.email_accounts"
                       type="text"
                       variant="outlined"
                       density="compact"
-                      maxlength="25"
+                      maxlength="50"
+                      counter
+                      :rules="rules.numberRequired"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      label="Precio por correo"
+                      v-model="item.email_price"
+                      type="text"
+                      variant="outlined"
+                      density="compact"
+                      maxlength="50"
                       counter
                       :rules="rules.textRequired"
                     />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field
-                      label="Apellido materno*"
-                      v-model="item.maternal_surname"
-                      type="text"
-                      variant="outlined"
-                      density="compact"
-                      maxlength="25"
-                      counter
-                      :rules="rules.textOptional"
-                    />
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12">
-            <v-card>
-              <v-card-title>
-                <v-row dense>
-                  <v-col cols="11">
-                    <CardTitle text="CUENTA" sub />
-                  </v-col>
-                  <v-col cols="1" class="text-right" />
-                </v-row>
-              </v-card-title>
-              <v-card-text>
-                <v-row dense>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      label="E-mail"
-                      v-model="item.email"
-                      type="text"
-                      variant="outlined"
-                      density="compact"
-                      maxlength="65"
-                      counter
-                      :rules="rules.emailRequired"
-                    />
+                    <v-menu
+                      v-model="dateMenu"
+                      :close-on-content-click="false"
+                      transition="scale-transition"
+                    >
+                      <template #activator="{ props }">
+                        <v-text-field
+                          v-bind="props"
+                          label="Fecha de expiración"
+                          v-model="formattedDate"
+                          variant="outlined"
+                          density="compact"
+                          prepend-inner-icon="mdi-calendar"
+                          readonly
+                          :rules="rules.dateRequired"
+                        />
+                      </template>
+                      <v-date-picker
+                        v-model="selectedDate"
+                        @update:model-value="updateExpireAt"
+                        title="Seleccionar fecha"
+                        header="Selecciona una fecha"
+                        :min="new Date().toISOString().split('T')[0]"
+                      />
+                    </v-menu>
                   </v-col>
                   <v-col cols="12" md="4">
                     <v-select
-                      label="Rol"
-                      v-model="item.role_id"
-                      :items="roles"
-                      :loading="rolesLoading"
+                      label="Extensión"
+                      v-model="item.extention_id"
+                      :items="extensions"
+                      :loading="extensionsLoading"
                       item-value="id"
                       item-title="name"
                       variant="outlined"
@@ -136,7 +151,7 @@
 
 <script setup>
 // Importaciones de librerías externas
-import { ref, inject, onMounted } from "vue";
+import { ref, inject, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import axios from "axios";
 
@@ -155,7 +170,7 @@ import CardTitle from "@/components/CardTitle.vue";
 import BtnDwd from "@/components/BtnDwd.vue";
 
 // Constantes fijas
-const routeName = "users";
+const routeName = "domains";
 
 // Estado y referencias
 const alert = inject("alert");
@@ -166,13 +181,20 @@ const route = useRoute();
 
 // Estado reactivo
 const itemId = ref(route.params.id ? getDecodeId(route.params.id) : null);
+const clientId = ref(
+  route.params.client ? getDecodeId(route.params.client) : null
+);
 const isStoreMode = ref(!itemId.value);
 const isLoading = ref(true);
 const formRef = ref(null);
 const item = ref(null);
 const rules = getRules();
-const roles = ref([]);
-const rolesLoading = ref(true);
+const expiration_dates = ref([]);
+const expiration_datesLoading = ref(true);
+const extensions = ref([]);
+const extensionsLoading = ref(true);
+const dateMenu = ref(false);
+const selectedDate = ref(null);
 
 // Obtener catálogos
 const getCatalogs = async () => {
@@ -180,20 +202,27 @@ const getCatalogs = async () => {
   let response = null;
 
   try {
-    endpoint = `${URL_API}/catalogs/roles`;
+    endpoint = `${URL_API}/catalogs/extensions`;
     response = await axios.get(endpoint, getHdrs(store.getAuth?.token));
-    roles.value = getRsp(response).data.items;
+    extensions.value = getRsp(response).data.items;
   } catch (err) {
     alert?.show("red-darken-1", getErr(err));
   } finally {
-    rolesLoading.value = false;
+    extensionsLoading.value = false;
   }
 };
 
 // Obtener datos
 const getItem = async () => {
   if (isStoreMode.value) {
-    item.value = getUserObj();
+    item.value = {
+      company: null,
+      name: null,
+      extention_id: null,
+      expire_at: null,
+      email_accounts: null,
+      client_id: clientId.value,
+    };
     isLoading.value = false;
   } else {
     try {
@@ -207,6 +236,31 @@ const getItem = async () => {
     }
   }
 };
+
+const updateExpireAt = (date) => {
+  if (date) {
+    // Si date es un objeto Date o viene en formato ISO
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    item.value.expire_at = `${year}-${month}-${day}`;
+  } else {
+    item.value.expire_at = null;
+  }
+  dateMenu.value = false;
+};
+
+const formattedDate = computed({
+  get: () => {
+    if (!item.value?.expire_at) return "";
+    if (item.value.expire_at.includes("-")) {
+      const [year, month, day] = item.value.expire_at.split("-");
+      return `${day}/${month}/${year}`;
+    }
+    return "";
+  },
+});
 
 // Agregar o editar
 const handleAction = async () => {
@@ -241,9 +295,10 @@ const handleAction = async () => {
     router.push({
       name: `${routeName}/show`,
       params: {
-        id: getEncodeId(
-          isStoreMode.value ? response.data.item.id : itemId.value
-        ),
+        client: getEncodeId(clientId.value),
+        id: isStoreMode.value
+          ? getEncodeId(response.data.item.id)
+          : getEncodeId(itemId.value),
       },
     });
   } catch (err) {
@@ -255,7 +310,7 @@ const handleAction = async () => {
 
 // Inicialización
 onMounted(() => {
-  getCatalogs();
   getItem();
+  getCatalogs();
 });
 </script>

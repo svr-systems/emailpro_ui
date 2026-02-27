@@ -3,6 +3,7 @@
     <v-card-title>
       <v-row dense>
         <v-col cols="10">
+          <BtnBack :route="{ name: 'clients' }" />
           <CardTitle :text="route.meta.title" :icon="route.meta.icon" />
         </v-col>
         <v-col cols="2" class="text-right">
@@ -11,7 +12,10 @@
             variant="flat"
             size="x-small"
             color="success"
-            :to="{ name: `${routeName}/store` }"
+            :to="{
+              name: `${routeName}/store`,
+              params: { client: getEncodeId(itemId) },
+            }"
           >
             <v-icon>mdi-plus</v-icon>
             <v-tooltip activator="parent" location="bottom">Agregar</v-tooltip>
@@ -97,7 +101,10 @@
                   :color="item.is_active ? '' : 'red-darken-3'"
                   :to="{
                     name: `${routeName}/show`,
-                    params: { id: getEncodeId(item.id) },
+                    params: {
+                      id: getEncodeId(item.id),
+                      client: getEncodeId(itemId),
+                    },
                   }"
                 >
                   <v-icon>mdi-eye</v-icon>
@@ -124,17 +131,19 @@ import axios from "axios";
 import { useStore } from "@/store";
 import { URL_API } from "@/utils/config";
 import { getHdrs, getErr, getRsp } from "@/utils/http";
-import { getEncodeId } from "@/utils/coders";
+import { getDecodeId, getEncodeId } from "@/utils/coders";
 import CardTitle from "@/components/CardTitle.vue";
+import BtnBack from "@/components/BtnBack.vue";
 
 // Constantes
-const routeName = "users";
+const routeName = "domains";
 const alert = inject("alert");
 const store = useStore();
 const route = useRoute();
 
 // Estado
-const isLoading = ref(false);
+const itemId = ref(getDecodeId(route.params.id));
+const isLoading = ref(true);
 const items = ref([]);
 const search = ref("");
 const isActive = ref(1);
@@ -153,10 +162,8 @@ const filterOptions = [{ id: 0, name: "TODOS" }];
 
 const headers = [
   { title: "#", key: "key", filterable: false, sortable: false, width: 60 },
-  { title: "Nombre", key: "name" },
-  { title: "Apellido paterno", key: "paternal_surname" },
-  { title: "Apellido materno", key: "maternal_surname" },
-  { title: "E-mail", key: "email" },
+  { title: "Empresa", key: "company" },
+  { title: "N° correos", key: "email_accounts" },
   { title: "", key: "action", filterable: false, sortable: false, width: 60 },
 ];
 
@@ -170,7 +177,7 @@ const getItems = async () => {
     const response = await axios.get(endpoint, {
       params: {
         is_active: isActive.value,
-        program_id: program_id.value,
+        client_id: itemId.value,
       },
       ...getHdrs(store.getAuth?.token),
     });

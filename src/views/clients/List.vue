@@ -128,13 +128,13 @@ import { getEncodeId } from "@/utils/coders";
 import CardTitle from "@/components/CardTitle.vue";
 
 // Constantes
-const routeName = "users";
+const routeName = "clients";
 const alert = inject("alert");
 const store = useStore();
 const route = useRoute();
 
 // Estado
-const isLoading = ref(false);
+const isLoading = ref(true);
 const items = ref([]);
 const search = ref("");
 const isActive = ref(1);
@@ -153,10 +153,9 @@ const filterOptions = [{ id: 0, name: "TODOS" }];
 
 const headers = [
   { title: "#", key: "key", filterable: false, sortable: false, width: 60 },
-  { title: "Nombre", key: "name" },
-  { title: "Apellido paterno", key: "paternal_surname" },
-  { title: "Apellido materno", key: "maternal_surname" },
-  { title: "E-mail", key: "email" },
+  { title: "Nombre", key: "user.name" },
+  { title: "Correo", key: "user.email" },
+  { title: "ID", key: "customer_id" },
   { title: "", key: "action", filterable: false, sortable: false, width: 60 },
 ];
 

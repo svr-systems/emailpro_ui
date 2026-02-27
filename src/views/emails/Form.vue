@@ -4,9 +4,24 @@
       <v-row dense>
         <v-col cols="10">
           <BtnBack
-            :route="{
-              name: routeName + (!isStoreMode ? '/show' : ''),
-            }"
+            :route="
+              !isStoreMode
+                ? {
+                    name: routeName + '/show',
+                    params: {
+                      id: getEncodeId(itemId),
+                      email: getEncodeId(emailId),
+                      domain: getEncodeId(domainId),
+                    },
+                  }
+                : {
+                    name: routeName,
+                    params: {
+                      id: getEncodeId(emailId),
+                      domain: getEncodeId(domainId),
+                    },
+                  }
+            "
           />
           <CardTitle :text="$route.meta.title" :icon="$route.meta.icon" />
         </v-col>
@@ -19,91 +34,18 @@
         <v-row>
           <v-col cols="12">
             <v-card>
-              <v-card-title>
-                <v-row dense>
-                  <v-col cols="11">
-                    <CardTitle text="DATOS GENERALES" sub />
-                  </v-col>
-                  <v-col cols="1" class="text-right" />
-                </v-row>
-              </v-card-title>
               <v-card-text>
                 <v-row dense>
                   <v-col cols="12" md="4">
                     <v-text-field
-                      label="Nombre"
-                      v-model="item.name"
+                      label="Correo"
+                      v-model="item.email"
                       type="text"
                       variant="outlined"
                       density="compact"
                       maxlength="50"
                       counter
-                      :rules="rules.textRequired"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      label="Apellido paterno"
-                      v-model="item.paternal_surname"
-                      type="text"
-                      variant="outlined"
-                      density="compact"
-                      maxlength="25"
-                      counter
-                      :rules="rules.textRequired"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      label="Apellido materno*"
-                      v-model="item.maternal_surname"
-                      type="text"
-                      variant="outlined"
-                      density="compact"
-                      maxlength="25"
-                      counter
-                      :rules="rules.textOptional"
-                    />
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12">
-            <v-card>
-              <v-card-title>
-                <v-row dense>
-                  <v-col cols="11">
-                    <CardTitle text="CUENTA" sub />
-                  </v-col>
-                  <v-col cols="1" class="text-right" />
-                </v-row>
-              </v-card-title>
-              <v-card-text>
-                <v-row dense>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      label="E-mail"
-                      v-model="item.email"
-                      type="text"
-                      variant="outlined"
-                      density="compact"
-                      maxlength="65"
-                      counter
                       :rules="rules.emailRequired"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-select
-                      label="Rol"
-                      v-model="item.role_id"
-                      :items="roles"
-                      :loading="rolesLoading"
-                      item-value="id"
-                      item-title="name"
-                      variant="outlined"
-                      density="compact"
                     />
                   </v-col>
                 </v-row>
@@ -155,7 +97,7 @@ import CardTitle from "@/components/CardTitle.vue";
 import BtnDwd from "@/components/BtnDwd.vue";
 
 // Constantes fijas
-const routeName = "users";
+const routeName = "emails";
 
 // Estado y referencias
 const alert = inject("alert");
@@ -166,38 +108,33 @@ const route = useRoute();
 
 // Estado reactivo
 const itemId = ref(route.params.id ? getDecodeId(route.params.id) : null);
+const domainId = ref(
+  route.params.domain ? getDecodeId(route.params.domain) : null
+);
+const emailId = ref(
+  route.params.email ? getDecodeId(route.params.email) : null
+);
 const isStoreMode = ref(!itemId.value);
 const isLoading = ref(true);
 const formRef = ref(null);
 const item = ref(null);
 const rules = getRules();
-const roles = ref([]);
-const rolesLoading = ref(true);
-
-// Obtener catálogos
-const getCatalogs = async () => {
-  let endpoint = null;
-  let response = null;
-
-  try {
-    endpoint = `${URL_API}/catalogs/roles`;
-    response = await axios.get(endpoint, getHdrs(store.getAuth?.token));
-    roles.value = getRsp(response).data.items;
-  } catch (err) {
-    alert?.show("red-darken-1", getErr(err));
-  } finally {
-    rolesLoading.value = false;
-  }
-};
+const expiration_dates = ref([]);
+const expiration_datesLoading = ref(true);
+const extensions = ref([]);
+const extensionsLoading = ref(true);
 
 // Obtener datos
 const getItem = async () => {
   if (isStoreMode.value) {
-    item.value = getUserObj();
+    item.value = {
+      email: null,
+      domain_id: domainId.value,
+    };
     isLoading.value = false;
   } else {
     try {
-      const endpoint = `${URL_API}/${routeName}/${itemId.value}`;
+      const endpoint = `${URL_API}/domains/${routeName}/${itemId.value}`;
       const response = await axios.get(endpoint, getHdrs(store.getAuth?.token));
       item.value = getRsp(response).data.item;
     } catch (err) {
@@ -225,7 +162,7 @@ const handleAction = async () => {
   let payload = getObj(item.value, isStoreMode.value);
 
   try {
-    const endpoint = `${URL_API}/${routeName}${
+    const endpoint = `${URL_API}/domains/${routeName}${
       !isStoreMode.value ? `/${payload.id}` : ""
     }`;
     const response = getRsp(
@@ -241,9 +178,10 @@ const handleAction = async () => {
     router.push({
       name: `${routeName}/show`,
       params: {
-        id: getEncodeId(
-          isStoreMode.value ? response.data.item.id : itemId.value
-        ),
+        domain: getEncodeId(domainId.value),
+        id: isStoreMode.value
+          ? getEncodeId(response.data.item.id)
+          : getEncodeId(itemId.value),
       },
     });
   } catch (err) {
@@ -255,7 +193,6 @@ const handleAction = async () => {
 
 // Inicialización
 onMounted(() => {
-  getCatalogs();
   getItem();
 });
 </script>

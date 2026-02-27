@@ -32,7 +32,7 @@
                   <v-col cols="12" md="4">
                     <v-text-field
                       label="Nombre"
-                      v-model="item.name"
+                      v-model="item.user.name"
                       type="text"
                       variant="outlined"
                       density="compact"
@@ -44,7 +44,7 @@
                   <v-col cols="12" md="4">
                     <v-text-field
                       label="Apellido paterno"
-                      v-model="item.paternal_surname"
+                      v-model="item.user.paternal_surname"
                       type="text"
                       variant="outlined"
                       density="compact"
@@ -56,7 +56,7 @@
                   <v-col cols="12" md="4">
                     <v-text-field
                       label="Apellido materno*"
-                      v-model="item.maternal_surname"
+                      v-model="item.user.maternal_surname"
                       type="text"
                       variant="outlined"
                       density="compact"
@@ -65,27 +65,10 @@
                       :rules="rules.textOptional"
                     />
                   </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12">
-            <v-card>
-              <v-card-title>
-                <v-row dense>
-                  <v-col cols="11">
-                    <CardTitle text="CUENTA" sub />
-                  </v-col>
-                  <v-col cols="1" class="text-right" />
-                </v-row>
-              </v-card-title>
-              <v-card-text>
-                <v-row dense>
                   <v-col cols="12" md="4">
                     <v-text-field
-                      label="E-mail"
-                      v-model="item.email"
+                      label="Correo"
+                      v-model="item.user.email"
                       type="text"
                       variant="outlined"
                       density="compact"
@@ -95,15 +78,15 @@
                     />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-select
-                      label="Rol"
-                      v-model="item.role_id"
-                      :items="roles"
-                      :loading="rolesLoading"
-                      item-value="id"
-                      item-title="name"
+                    <v-text-field
+                      label="Telefono"
+                      v-model="item.user.phone"
+                      type="text"
                       variant="outlined"
                       density="compact"
+                      maxlength="65"
+                      counter
+                      :rules="rules.phoneRequired"
                     />
                   </v-col>
                 </v-row>
@@ -155,7 +138,7 @@ import CardTitle from "@/components/CardTitle.vue";
 import BtnDwd from "@/components/BtnDwd.vue";
 
 // Constantes fijas
-const routeName = "users";
+const routeName = "clients";
 
 // Estado y referencias
 const alert = inject("alert");
@@ -174,26 +157,12 @@ const rules = getRules();
 const roles = ref([]);
 const rolesLoading = ref(true);
 
-// Obtener catálogos
-const getCatalogs = async () => {
-  let endpoint = null;
-  let response = null;
-
-  try {
-    endpoint = `${URL_API}/catalogs/roles`;
-    response = await axios.get(endpoint, getHdrs(store.getAuth?.token));
-    roles.value = getRsp(response).data.items;
-  } catch (err) {
-    alert?.show("red-darken-1", getErr(err));
-  } finally {
-    rolesLoading.value = false;
-  }
-};
-
 // Obtener datos
 const getItem = async () => {
   if (isStoreMode.value) {
-    item.value = getUserObj();
+    item.value = {
+      user: getUserObj(),
+    };
     isLoading.value = false;
   } else {
     try {
@@ -255,7 +224,6 @@ const handleAction = async () => {
 
 // Inicialización
 onMounted(() => {
-  getCatalogs();
   getItem();
 });
 </script>

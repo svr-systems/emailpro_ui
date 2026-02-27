@@ -3,10 +3,28 @@
     <v-card-title>
       <v-row dense>
         <v-col cols="10">
-          <BtnBack :route="{ name: routeName }" />
+          <BtnBack
+            :route="{ name: routeName, params: { id: getEncodeId(clientId) } }"
+          />
           <CardTitle :text="route.meta.title" :icon="route.meta.icon" />
         </v-col>
         <v-col v-if="item" cols="2" class="text-right">
+          <v-btn
+            icon
+            variant="flat"
+            size="x-small"
+            color="success"
+            class="mr-2"
+            :to="{
+              name: 'emails',
+              params: { id: getEncodeId(item.id), domain: getEncodeId(clientId) },
+            }"
+          >
+            <v-icon>mdi-email</v-icon>
+            <v-tooltip activator="parent" location="bottom"
+              >Ver emails</v-tooltip
+            >
+          </v-btn>
           <v-btn
             v-if="item.is_active"
             icon
@@ -15,7 +33,10 @@
             color="warning"
             :to="{
               name: `${routeName}/update`,
-              params: { id: getEncodeId(itemId) },
+              params: {
+                id: getEncodeId(item.id),
+                client: getEncodeId(clientId),
+              },
             }"
           >
             <v-icon>mdi-pencil</v-icon>
@@ -79,36 +100,28 @@
             <v-card-text>
               <v-row dense>
                 <v-col cols="12" md="4">
-                  <VisVal label="Nombre" :value="item.name" />
+                  <VisVal label="Empresa" :value="item.company" />
                 </v-col>
                 <v-col cols="12" md="4">
-                  <VisVal label="A. paterno" :value="item.paternal_surname" />
+                  <VisVal label="Nombre de dominio" :value="item.name" />
                 </v-col>
                 <v-col cols="12" md="4">
-                  <VisVal label="A. materno" :value="item.maternal_surname" />
+                  <VisVal
+                    label="N° cuentas de email"
+                    :value="item.email_accounts"
+                  />
                 </v-col>
-              </v-row>
-            </v-card-text>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12">
-          <v-card>
-            <v-card-title>
-              <v-row dense>
-                <v-col cols="11">
-                  <CardTitle text="CUENTA" sub />
+                <v-col cols="12" md="4">
+                  <VisVal
+                    label="Precio por correo"
+                    :value="item.email_price"
+                  />
                 </v-col>
-                <v-col cols="1" class="text-right" />
-              </v-row>
-            </v-card-title>
-            <v-card-text>
-              <v-row dense>
-                <v-col cols="12" md="3">
-                  <VisVal label="E-mail" :value="item.email" />
+                <v-col cols="12" md="4">
+                  <VisVal label="Fecha de expiración" :value="item.expire_at" />
                 </v-col>
-                <v-col cols="12" md="3">
-                  <VisVal label="Rol" :value="item.role?.name" />
+                <v-col cols="12" md="4">
+                  <VisVal label="Extensión" :value="item.extension.name" />
                 </v-col>
               </v-row>
             </v-card-text>
@@ -157,7 +170,7 @@ import VisVal from "@/components/VisVal.vue";
 import VisDoc from "@/components/VisDoc.vue";
 
 // Constantes fijas
-const routeName = "users";
+const routeName = "domains";
 
 // Estado y referencias
 const alert = inject("alert");
@@ -168,6 +181,9 @@ const route = useRoute();
 
 // Estado reactivo
 const itemId = ref(getDecodeId(route.params.id));
+const clientId = ref(
+  route.params.client ? getDecodeId(route.params.client) : null
+);
 const isLoading = ref(true);
 const item = ref(null);
 const regDialog = ref(false);

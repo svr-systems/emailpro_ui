@@ -8,7 +8,23 @@
         </v-col>
         <v-col v-if="item" cols="2" class="text-right">
           <v-btn
-            v-if="item.is_active"
+            icon
+            variant="flat"
+            size="x-small"
+            color="info"
+            class="mr-2"
+            :to="{
+              name: 'domains',
+              params: { id: getEncodeId(item.id) },
+            }"
+          >
+            <v-icon>mdi-cloud</v-icon>
+            <v-tooltip activator="parent" location="bottom"
+              >Ver dominios</v-tooltip
+            >
+          </v-btn>
+          <v-btn
+            v-if="item.user.is_active"
             icon
             variant="flat"
             size="x-small"
@@ -27,7 +43,7 @@
 
     <v-card-text v-if="item">
       <v-row>
-        <v-col v-if="!item.is_active" cols="12">
+        <v-col v-if="!item.user.is_active" cols="12">
           <v-alert type="error" density="compact" class="rounded">
             <v-row dense>
               <v-col class="grow pt-2">El registro se encuentra inactivo</v-col>
@@ -79,36 +95,25 @@
             <v-card-text>
               <v-row dense>
                 <v-col cols="12" md="4">
-                  <VisVal label="Nombre" :value="item.name" />
+                  <VisVal label="Nombre" :value="item.user.name" />
                 </v-col>
                 <v-col cols="12" md="4">
-                  <VisVal label="A. paterno" :value="item.paternal_surname" />
+                  <VisVal
+                    label="A. paterno"
+                    :value="item.user.paternal_surname"
+                  />
                 </v-col>
                 <v-col cols="12" md="4">
-                  <VisVal label="A. materno" :value="item.maternal_surname" />
-                </v-col>
-              </v-row>
-            </v-card-text>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12">
-          <v-card>
-            <v-card-title>
-              <v-row dense>
-                <v-col cols="11">
-                  <CardTitle text="CUENTA" sub />
-                </v-col>
-                <v-col cols="1" class="text-right" />
-              </v-row>
-            </v-card-title>
-            <v-card-text>
-              <v-row dense>
-                <v-col cols="12" md="3">
-                  <VisVal label="E-mail" :value="item.email" />
+                  <VisVal
+                    label="A. materno"
+                    :value="item.user.maternal_surname"
+                  />
                 </v-col>
                 <v-col cols="12" md="3">
-                  <VisVal label="Rol" :value="item.role?.name" />
+                  <VisVal label="Correo" :value="item.user.email" />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <VisVal label="Telefono" :value="item.user.phone" />
                 </v-col>
               </v-row>
             </v-card-text>
@@ -157,7 +162,7 @@ import VisVal from "@/components/VisVal.vue";
 import VisDoc from "@/components/VisDoc.vue";
 
 // Constantes fijas
-const routeName = "users";
+const routeName = "clients";
 
 // Estado y referencias
 const alert = inject("alert");

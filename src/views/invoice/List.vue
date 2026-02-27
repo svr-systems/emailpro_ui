@@ -3,18 +3,20 @@
     <v-card-title>
       <v-row dense>
         <v-col cols="10">
+          <BtnBack :route="{ name: 'domains' }" />
           <CardTitle :text="route.meta.title" :icon="route.meta.icon" />
         </v-col>
         <v-col cols="2" class="text-right">
           <v-btn
-            icon
             variant="flat"
             size="x-small"
             color="success"
-            :to="{ name: `${routeName}/store` }"
+            :to="{
+              name: `${routeName}`,
+              params: { id: getEncodeId(itemId) },
+            }"
           >
-            <v-icon>mdi-plus</v-icon>
-            <v-tooltip activator="parent" location="bottom">Agregar</v-tooltip>
+            Pagar
           </v-btn>
         </v-col>
       </v-row>
@@ -95,10 +97,6 @@
                   variant="text"
                   size="x-small"
                   :color="item.is_active ? '' : 'red-darken-3'"
-                  :to="{
-                    name: `${routeName}/show`,
-                    params: { id: getEncodeId(item.id) },
-                  }"
                 >
                   <v-icon>mdi-eye</v-icon>
                   <v-tooltip activator="parent" location="left"
@@ -124,18 +122,28 @@ import axios from "axios";
 import { useStore } from "@/store";
 import { URL_API } from "@/utils/config";
 import { getHdrs, getErr, getRsp } from "@/utils/http";
-import { getEncodeId } from "@/utils/coders";
+import { getDecodeId, getEncodeId } from "@/utils/coders";
+import BtnBack from "@/components/BtnBack.vue";
 import CardTitle from "@/components/CardTitle.vue";
 
 // Constantes
-const routeName = "users";
+const routeName = "invoice";
 const alert = inject("alert");
 const store = useStore();
 const route = useRoute();
 
 // Estado
 const isLoading = ref(false);
-const items = ref([]);
+const items = ref([
+  {
+    key: 0,
+    id: 1,
+    is_active: true,
+    date: "2026-02-23",
+    amount: 500,
+  },
+]);
+const itemId = ref(getDecodeId(route.params.id));
 const search = ref("");
 const isActive = ref(1);
 const program_id = ref(0);
@@ -152,11 +160,9 @@ const isActiveOptions = [
 const filterOptions = [{ id: 0, name: "TODOS" }];
 
 const headers = [
-  { title: "#", key: "key", filterable: false, sortable: false, width: 60 },
-  { title: "Nombre", key: "name" },
-  { title: "Apellido paterno", key: "paternal_surname" },
-  { title: "Apellido materno", key: "maternal_surname" },
-  { title: "E-mail", key: "email" },
+  { title: "Folio", key: "key" },
+  { title: "Fecha", key: "date" },
+  { title: "Monto", key: "amount" },
   { title: "", key: "action", filterable: false, sortable: false, width: 60 },
 ];
 
@@ -170,7 +176,7 @@ const getItems = async () => {
     const response = await axios.get(endpoint, {
       params: {
         is_active: isActive.value,
-        program_id: program_id.value,
+        client_id: itemId.value,
       },
       ...getHdrs(store.getAuth?.token),
     });
@@ -184,6 +190,6 @@ const getItems = async () => {
 
 // Cargar datos al montar
 onMounted(() => {
-  getItems();
+  // getItems();
 });
 </script>

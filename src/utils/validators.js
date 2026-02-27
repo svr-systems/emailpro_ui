@@ -4,8 +4,8 @@
 export const getRules = () => {
   const required =
     (msg = "Campo requerido") =>
-    (value) =>
-      !!value || msg;
+      (value) =>
+        !!value || msg;
   const maxLength = (max, msg) => (value) =>
     !value || value.length <= max || msg;
   const minLength = (min, msg) => (value) =>
@@ -38,14 +38,19 @@ export const getRules = () => {
   };
   const curp =
     (msg = "CURP inválida") =>
-    (value) =>
-      isCurp(value) || msg;
+      (value) =>
+        isCurp(value) || msg;
 
   return {
     required: [required()],
     requiredNotNull: [(value) => value != null || "Campo requerido"],
 
     textRequired: [required(), minLength(2, "Mínimo 2 caracteres")],
+    numberRequired: [
+      required(),
+      minLength(1, "Mínimo un caracter"),
+      (value) => /^\d+$/.test(value) || "Solo se permiten números"
+    ],
     textOptional: [minLength(2, "Mínimo 2 caracteres")],
 
     emailRequired: [
